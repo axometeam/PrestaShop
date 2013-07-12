@@ -93,7 +93,7 @@ class OrderHistoryCore extends ObjectModel
 		
 
 		// executes hook
-		if (in_array($new_os->id, array(Configuration::get('PS_OS_PAYMENT'), Configuration::get('PS_OS_WS_PAYMENT'))))
+		if ($new_os->id == Configuration::get('PS_OS_PAYMENT'))
 			Hook::exec('actionPaymentConfirmation', array('id_order' => (int)$order->id));
 
 		// executes hook
@@ -123,7 +123,7 @@ class OrderHistoryCore extends ObjectModel
 							.'&secure_key='.$order->secure_key;
 						$assign[$key]['link'] = $dl_link;
 						if (isset($virtual_product['date_expiration']) && $virtual_product['date_expiration'] != '0000-00-00 00:00:00')
-							$assign[$key]['deadline'] = Tools::displayDate($virtual_product['date_expiration ']);
+							$assign[$key]['deadline'] = Tools::displayDate($virtual_product['date_expiration '], $order->id_lang);
 						if ($product_download->nb_downloadable != 0)
 							$assign[$key]['downloadable'] = (int)$product_download->nb_downloadable;
 					}
@@ -161,6 +161,9 @@ class OrderHistoryCore extends ObjectModel
 			$manager = null;
 			if (Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT'))
 				$manager = StockManagerFactory::getManager();
+				
+			$errorOrCanceledStatuses = array(Configuration::get('PS_OS_ERROR'), Configuration::get('PS_OS_CANCELED'));
+			
 			// foreach products of the order
 			if (Validate::isLoadedObject($old_os))			
 				foreach ($order->getProductsDetail() as $product)
@@ -171,7 +174,7 @@ class OrderHistoryCore extends ObjectModel
 						ProductSale::addProductSale($product['product_id'], $product['product_quantity']);
 						// @since 1.5.0 - Stock Management
 						if (!Pack::isPack($product['product_id']) &&
-							($old_os->id == Configuration::get('PS_OS_ERROR') || $old_os->id == Configuration::get('PS_OS_CANCELED')) &&
+							in_array($old_os->id, $errorOrCanceledStatuses) &&
 							!StockAvailable::dependsOnStock($product['id_product'], (int)$order->id_shop))
 							StockAvailable::updateQuantity($product['product_id'], $product['product_attribute_id'], -(int)$product['product_quantity'], $order->id_shop);
 					}
@@ -182,13 +185,14 @@ class OrderHistoryCore extends ObjectModel
 	
 						// @since 1.5.0 - Stock Management
 						if (!Pack::isPack($product['product_id']) &&
-							($new_os->id == Configuration::get('PS_OS_ERROR') || $new_os->id == Configuration::get('PS_OS_CANCELED')) &&
+							in_array($new_os->id, $errorOrCanceledStatuses) &&
 							!StockAvailable::dependsOnStock($product['id_product']))
 							StockAvailable::updateQuantity($product['product_id'], $product['product_attribute_id'], (int)$product['product_quantity'], $order->id_shop);
 					}
 					// if waiting for payment => payment error/canceled
 					elseif (!$new_os->logable && !$old_os->logable &&
-							 ($new_os->id == Configuration::get('PS_OS_ERROR') || $new_os->id == Configuration::get('PS_OS_CANCELED')) &&
+							 in_array($new_os->id, $errorOrCanceledStatuses) &&
+							 !in_array($old_os->id, $errorOrCanceledStatuses) &&
 							 !StockAvailable::dependsOnStock($product['id_product']))
 							 StockAvailable::updateQuantity($product['product_id'], $product['product_attribute_id'], (int)$product['product_quantity'], $order->id_shop);
 					// @since 1.5.0 : if the order is being shipped and this products uses the advanced stock management :
