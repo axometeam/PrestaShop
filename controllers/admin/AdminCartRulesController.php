@@ -184,6 +184,9 @@ class AdminCartRulesControllerCore extends AdminController
 					$values[] = '('.(int)$currentObject->id.','.(int)$id.')';
 				Db::getInstance()->execute('INSERT INTO `'._DB_PREFIX_.'cart_rule_'.$type.'` (`id_cart_rule`, `id_'.$type.'`) VALUES '.implode(',', $values));
 			}
+		if (!Tools::getValue('shop_restriction'))
+			Db::getInstance()->execute('INSERT INTO `'._DB_PREFIX_.'cart_rule_shop` (`id_cart_rule`, `id_shop`) VALUES '.'('.(int)$currentObject->id.','.(int)$this->context->shop->id.')');
+
 		// Add cart rule restrictions
 		if (Tools::getValue('cart_rule_restriction') && is_array($array = Tools::getValue('cart_rule_select')) && count($array))
 		{
