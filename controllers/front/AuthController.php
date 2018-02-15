@@ -266,7 +266,10 @@ class AuthControllerCore extends FrontController
      */
     protected function processSubmitLogin()
     {
-        Hook::exec('actionBeforeAuthentication');
+        Hook::exec('actionBeforeAuthentication', array(
+            '_POST' => $_POST,
+            'errors' => &$this->errors
+        ));
         $passwd = trim(Tools::getValue('passwd'));
         $_POST['passwd'] = null;
         $email = trim(Tools::getValue('email'));
@@ -321,7 +324,11 @@ class AuthControllerCore extends FrontController
                 $this->context->cookie->write();
                 $this->context->cart->autosetProductAddress();
 
-                Hook::exec('actionAuthentication', array('customer' => $this->context->customer));
+                Hook::exec('actionAuthentication', array(
+                    '_POST' => $_POST,
+                    'errors' => &$this->errors,
+                    'customer' => $this->context->customer
+                ));
 
                 // Login information have changed, so we check if the cart rules still apply
                 CartRule::autoRemoveFromCart($this->context);
@@ -384,7 +391,10 @@ class AuthControllerCore extends FrontController
      */
     protected function processSubmitAccount()
     {
-        Hook::exec('actionBeforeSubmitAccount');
+        Hook::exec('actionBeforeSubmitAccount', array(
+            '_POST' => $_POST,
+            'errors' => &$this->errors
+        ));
         $this->create_account = true;
         if (Tools::isSubmit('submitAccount')) {
             $this->context->smarty->assign('email_create', 1);
@@ -466,9 +476,10 @@ class AuthControllerCore extends FrontController
 
                         $this->context->cart->update();
                         Hook::exec('actionCustomerAccountAdd', array(
-                                '_POST' => $_POST,
-                                'newCustomer' => $customer
-                            ));
+                            '_POST' => $_POST,
+                            'errors' => &$this->errors,
+                            'newCustomer' => $customer
+                        ));
                         if ($this->ajax) {
                             $return = array(
                                 'hasError' => !empty($this->errors),
@@ -639,9 +650,10 @@ class AuthControllerCore extends FrontController
                         $this->context->cart->autosetProductAddress();
 
                         Hook::exec('actionCustomerAccountAdd', array(
-                                '_POST' => $_POST,
-                                'newCustomer' => $customer
-                            ));
+                            '_POST' => $_POST,
+                            'errors' => &$this->errors,
+                            'newCustomer' => $customer
+                        ));
                         if ($this->ajax) {
                             $return = array(
                                 'hasError' => !empty($this->errors),
