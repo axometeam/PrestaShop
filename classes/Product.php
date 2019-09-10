@@ -4282,7 +4282,8 @@ class ProductCore extends ObjectModel
         SELECT pa.*, product_attribute_shop.*
             FROM `' . _DB_PREFIX_ . 'product_attribute` pa
             ' . Shop::addSqlAssociation('product_attribute', 'pa') . '
-            WHERE pa.`id_product` = ' . (int) $id_product_old
+            WHERE pa.`id_product` = ' . (int) $id_product_old . '
+            GROUP BY (product_attribute_shop.`id_product_attribute`)'
         );
         $combinations = array();
 
